@@ -4,8 +4,6 @@ import sqltoolsRequire from '@sqltools/core/utils/sqltools-require';
 import { IConnectionDriver, NSDatabase } from '@sqltools/types';
 import { HostKind, getHostKind } from '@sqltools/core/utils/host-kind';
 
-const SAP_ENTERPRISE_MODE: boolean = true;
-
 interface Statement {
   exec(params: any[], handler: (err: any, row: any) => void);
 }
@@ -53,7 +51,7 @@ export default class SAPHana extends AbstractDriver<HanaConnection, any> impleme
       connOptions["CONNECTTIMEOUT"] = this.credentials.connectionTimeout * 1000;
     }
 
-    if (SAP_ENTERPRISE_MODE) {
+    if (process.env.SAP_ENTERPRISE_MODE) {
       let errorDescription: string[] = ["SAP Enterprise Mode - Wrong connection configuration", ""];
       if (!this.credentials["hanaOptions"] || this.credentials["hanaOptions"].encrypt !== true) {
         errorDescription[1] = "- connection to SAP Hana must use SSL encryption.";
