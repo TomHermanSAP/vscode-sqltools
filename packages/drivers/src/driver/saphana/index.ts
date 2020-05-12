@@ -1,8 +1,8 @@
-
 import queries from './queries';
 import AbstractDriver from '../../lib/abstract';
 import sqltoolsRequire from '@sqltools/core/utils/sqltools-require';
 import { IConnectionDriver, NSDatabase } from '@sqltools/types';
+import { HostKind, getHostKind } from '@sqltools/core/utils/host-kind';
 
 interface Statement {
   exec(params: any[], handler: (err: any, row: any) => void);
@@ -50,12 +50,40 @@ export default class SAPHana extends AbstractDriver<HanaConnection, any> impleme
     if (this.credentials.connectionTimeout && this.credentials.connectionTimeout > 0) {
       connOptions["CONNECTTIMEOUT"] = this.credentials.connectionTimeout * 1000;
     }
-    
+
+    if (process.env.ENTERPRISE_MODE) {
+      let errorDescription: string[] = ["Enterprise Mode - Wrong SAPHana connection configuration", ""];
+      if (!this.credentials["hanaOptions"] || this.credentials["hanaOptions"].encrypt !== true) {
+        errorDescription[1] = "- connection to SAPHana must use SSL encryption.";
+
+        this.log.extend('error')("Connection to SAPHana failed", errorDescription.join(" "));
+        return Promise.reject(errorDescription.join(" "));
+      }
+
+      const connHostKind: HostKind = getHostKind(connOptions.HOST);
+      if (connHostKind === HostKind.IP && this.credentials["hanaOptions"].sslValidateCertificate !== false) {
+        errorDescription[1] = "for host as IP.";
+
+        this.log.extend('error')("Connection to SAPHana failed", errorDescription.join(" "));
+        return Promise.reject(errorDescription.join(" "));
+      }
+
+      else if (connHostKind === HostKind.Domain && (
+        this.credentials["hanaOptions"].sslValidateCertificate !== true ||
+        !this.credentials["hanaOptions"].sslCryptoProvider ||
+        !this.credentials["hanaOptions"].sslTrustStore)) {
+        errorDescription[1] = "for host as Domain.";
+
+        this.log.extend('error')("Connection to SAPHana failed", errorDescription.join(" "));
+        return Promise.reject(errorDescription.join(" "));
+      }
+    }
+
     connOptions = {
       ...connOptions,
       ...(this.credentials["hanaOptions"] || {}),
     };
-    
+
     try {
       let conn = this.lib.createConnection(connOptions);
 
@@ -66,12 +94,12 @@ export default class SAPHana extends AbstractDriver<HanaConnection, any> impleme
         }
         this.schema = this.credentials.database;
         conn.exec("SET SCHEMA " + this.schema, err => {
-            if (err) {
-              reject(err);
-            }
-            this.log.extend('debug')("Connection to SAP Hana succeeded!");
-            resolve(conn);
-          });
+          if (err) {
+            reject(err);
+          }
+          this.log.extend('debug')("Connection to SAP Hana succeeded!");
+          resolve(conn);
+        });
       }));
       return this.connection;
     } catch (e) {
@@ -207,5 +235,5 @@ export default class SAPHana extends AbstractDriver<HanaConnection, any> impleme
       })
     });
   }
-  
+
 }
