@@ -51,12 +51,12 @@ export default class SAPHana extends AbstractDriver<HanaConnection, any> impleme
       connOptions["CONNECTTIMEOUT"] = this.credentials.connectionTimeout * 1000;
     }
 
-    if (process.env.SAP_ENTERPRISE_MODE) {
-      let errorDescription: string[] = ["SAP Enterprise Mode - Wrong connection configuration", ""];
+    if (process.env.ENTERPRISE_MODE) {
+      let errorDescription: string[] = ["Enterprise Mode - Wrong SAPHana connection configuration", ""];
       if (!this.credentials["hanaOptions"] || this.credentials["hanaOptions"].encrypt !== true) {
-        errorDescription[1] = "- connection to SAP Hana must use SSL encryption.";
+        errorDescription[1] = "- connection to SAPHana must use SSL encryption.";
 
-        this.log.extend('error')("Connection to SAP Hana failed", errorDescription.join(" "));
+        this.log.extend('error')("Connection to SAPHana failed", errorDescription.join(" "));
         return Promise.reject(errorDescription.join(" "));
       }
 
@@ -64,7 +64,7 @@ export default class SAPHana extends AbstractDriver<HanaConnection, any> impleme
       if (connHostKind === HostKind.IP && this.credentials["hanaOptions"].sslValidateCertificate !== false) {
         errorDescription[1] = "for host as IP.";
 
-        this.log.extend('error')("Connection to SAP Hana failed", errorDescription.join(" "));
+        this.log.extend('error')("Connection to SAPHana failed", errorDescription.join(" "));
         return Promise.reject(errorDescription.join(" "));
       }
 
@@ -74,7 +74,7 @@ export default class SAPHana extends AbstractDriver<HanaConnection, any> impleme
         !this.credentials["hanaOptions"].sslTrustStore)) {
         errorDescription[1] = "for host as Domain.";
 
-        this.log.extend('error')("Connection to SAP Hana failed", errorDescription.join(" "));
+        this.log.extend('error')("Connection to SAPHana failed", errorDescription.join(" "));
         return Promise.reject(errorDescription.join(" "));
       }
     }
